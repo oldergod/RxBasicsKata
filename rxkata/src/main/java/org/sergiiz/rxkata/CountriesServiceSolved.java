@@ -1,6 +1,5 @@
 package org.sergiiz.rxkata;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.FutureTask;
@@ -8,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 
 class CountriesServiceSolved implements CountriesService {
 
@@ -21,33 +21,38 @@ class CountriesServiceSolved implements CountriesService {
     }
 
     public Observable<Long> listPopulationOfEachCountry(List<Country> countries) {
-        return Observable.fromIterable(countries).map(Country::getPopulation);
+        return Observable.fromIterable(countries)
+                .map(Country::getPopulation);
     }
 
     @Override
     public Observable<String> listNameOfEachCountry(List<Country> countries) {
-        return Observable.fromIterable(countries).map(Country::getName);
+        return Observable.fromIterable(countries)
+                .map(Country::getName);
     }
 
     @Override
     public Observable<Country> listOnly3rdAnd4thCountry(List<Country> countries) {
-        return Observable.fromIterable(countries).skip(2).take(2);
+        return Observable.fromIterable(countries)
+                .skip(2).take(2);
     }
 
     @Override
     public Single<Boolean> isAllCountriesPopulationMoreThanOneMillion(List<Country> countries) {
-        return Observable.fromIterable(countries).all(country -> country.getPopulation() > 1000000);
+        return Observable.fromIterable(countries)
+                .all(country -> country.getPopulation() > 1000000);
     }
 
 
     @Override
     public Observable<Country> listPopulationMoreThanOneMillion(List<Country> countries) {
-        return Observable.fromIterable(countries).filter(country -> country.getPopulation() > 1000000);
+        return Observable.fromIterable(countries)
+                .filter(country -> country.getPopulation() > 1000000);
     }
 
     @Override
     public Observable<Country> listPopulationMoreThanOneMillionWithTimeoutFallbackToEmpty(final FutureTask<List<Country>> countriesFromNetwork) {
-        return Observable.fromFuture(countriesFromNetwork)
+        return Observable.fromFuture(countriesFromNetwork, Schedulers.io())
                 .flatMap(Observable::fromIterable)
                 .filter(country -> country.getPopulation() > 1000000)
                 .timeout(1, TimeUnit.SECONDS, Observable.empty());
@@ -72,9 +77,6 @@ class CountriesServiceSolved implements CountriesService {
     @Override
     public Single<Map<String, Long>> mapCountriesToNamePopulation(List<Country> countries) {
         return Observable.fromIterable(countries)
-                .reduce(new HashMap<String, Long>(), (stringLongMap, country) -> {
-                    stringLongMap.put(country.getName(), country.getPopulation());
-                    return stringLongMap;
-                });
+                .toMap(Country::getName, Country::getPopulation);
     }
 }
